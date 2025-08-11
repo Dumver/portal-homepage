@@ -5,12 +5,11 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Purple Portals — Home</title>
 
-  <!-- Orbitron font for sci-fi look -->
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      --accent: #aa00ff; /* neon purple */
+      --accent: #aa00ff;
       --accent-weak: rgba(170,0,255,0.25);
       --glass: rgba(20,20,25,0.35);
       --glass-strong: rgba(18,18,20,0.65);
@@ -24,18 +23,14 @@
     }
     .video-bg video{min-width:100%;min-height:100%;width:auto;height:auto;object-fit:cover;filter:contrast(1.03) saturate(1.1);}
 
-    /* overlay to gently darken edges so UI is readable */
     .vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center, rgba(0,0,0,0.00) 30%, rgba(0,0,0,0.45) 100%);z-index:1}
 
-    /* Container for UI */
     .ui{position:relative;z-index:2;padding:28px;display:flex;flex-direction:column;gap:18px;min-height:100%;box-sizing:border-box}
 
-    /* Top-right control row */
     .controls{display:flex;gap:10px;align-items:center;justify-content:flex-end}
     .dot{width:18px;height:18px;border-radius:50%;background:var(--accent);box-shadow:0 0 18px var(--accent-weak) inset;}
     .icon-btn{background:var(--glass);border:1px solid rgba(255,255,255,0.04);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
 
-    /* Center search bar */
     .center-wrap{flex:1;display:flex;align-items:center;justify-content:center}
     .search-card{backdrop-filter:blur(6px);background:linear-gradient(180deg, rgba(28,28,34,0.25), rgba(12,12,16,0.35));border-radius:14px;padding:16px;min-width:38vw;max-width:1100px;border:1px solid rgba(170,0,255,0.08);box-shadow:0 8px 30px rgba(0,0,0,0.6)}
 
@@ -49,13 +44,10 @@
     .engine{padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:rgba(255,255,255,0.02);color:rgba(255,255,255,0.8);cursor:pointer}
     .engine.selected{box-shadow:0 6px 20px var(--accent-weak);border-color:var(--accent)}
 
-    /* small footer note */
     .footer{color:rgba(255,255,255,0.45);font-size:12px}
 
-    /* responsive tweaks */
     @media (max-width:720px){.search-card{min-width:86vw;padding:12px}.search-input{font-size:14px}}
 
-    /* hide scrollbar while preserving scroll capability */
     ::-webkit-scrollbar{width:8px}
     ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:8px}
   </style>
@@ -79,7 +71,7 @@
     </div>
 
     <div class="center-wrap">
-      <div class="search-card" id="searchCard">
+      <div class="search-card" id="searchCard" style="position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); cursor:move;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
           <div style="font-size:13px;color:var(--text);opacity:0.9">Purple Portals</div>
           <div style="display:flex;gap:8px;align-items:center">
@@ -94,7 +86,8 @@
         </form>
 
         <div class="engine-row" id="engines">
-          <div class="engine selected" data-url="https://www.google.com/search?q=">Google</div>
+          <div class="engine selected" data-url="https://www.startpage.com/do/search?q=">Startpage</div>
+          <div class="engine" data-url="https://www.google.com/search?q=">Google</div>
           <div class="engine" data-url="https://duckduckgo.com/?q=">DuckDuckGo</div>
           <div class="engine" data-url="https://www.bing.com/search?q=">Bing</div>
           <div class="engine" data-url="https://search.brave.com/search?q=">Brave</div>
@@ -104,11 +97,11 @@
     </div>
 
     <div style="height:10px"></div>
-    <div class="footer">Tip: save this file and set it as your homepage in Waterfox (about:preferences → Home → Custom URLs → file:///…)</div>
+    <div class="footer">Tip: Why are you here</div>
   </div>
 
 <script>
-  // engine selection
+
   let engines = document.querySelectorAll('.engine');
   let selected = document.querySelector('.engine.selected');
   engines.forEach(e=>e.addEventListener('click', ()=>{
@@ -125,7 +118,6 @@
     return false;
   }
 
-  // toggle search visibility
   const toggleBtn = document.getElementById('toggleSearch');
   const searchCard = document.getElementById('searchCard');
   toggleBtn.addEventListener('click', ()=>{
@@ -138,12 +130,10 @@
     }
   });
 
-  // open blank page
   document.getElementById('openBlank').addEventListener('click', ()=>{
     window.open('about:blank','_blank');
   });
 
-  // settings open folder - best-effort (can't access local FS from browser), so show instructions
   document.getElementById('settings').addEventListener('click', ()=>{
     alert('To set this file as your homepage: Save the file locally, then in Waterfox go to about:preferences#home → Homepage and new windows → Custom URLs and paste the file path (file:///C:/path/to/portal_homepage.html).');
   });
@@ -154,6 +144,42 @@
     if(video.paused) video.play(); else video.pause();
   });
 
+(function() {
+  const el = document.getElementById('searchCard');
+  let offsetX, offsetY, isDragging = false;
+
+  const savedPos = localStorage.getItem('searchCardPos');
+  if (savedPos) {
+    const { left, top } = JSON.parse(savedPos);
+    el.style.left = left;
+    el.style.top = top;
+    el.style.transform = 'translate(0, 0)';
+  }
+
+  el.addEventListener('mousedown', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.closest('.engine')) return;
+    isDragging = true;
+    offsetX = e.clientX - el.offsetLeft;
+    offsetY = e.clientY - el.offsetTop;
+    el.style.transition = 'none';
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!isDragging) return;
+    el.style.left = (e.clientX - offsetX) + 'px';
+    el.style.top = (e.clientY - offsetY) + 'px';
+  });
+
+  document.addEventListener('mouseup', function() {
+    if (isDragging) {
+      isDragging = false;
+      localStorage.setItem('searchCardPos', JSON.stringify({
+        left: el.style.left,
+        top: el.style.top
+      }));
+    }
+  });
+})();
 </script>
 </body>
 </html>
