@@ -75,14 +75,9 @@
     </video>
   </div>
 
-  <iframe
-    id="ytMusic"
-    style="display:none"
-    src="https://www.youtube.com/embed/GDEaBvnzSfs?autoplay=1&loop=1&playlist=GDEaBvnzSfs&mute=1"
-    frameborder="0"
-    allow="autoplay"
-    allowfullscreen
-  ></iframe>
+  <audio id="bgMusic" autoplay loop muted>
+    <source src="https://www.dropbox.com/scl/fi/vjio71h70h2gr3sasi6fh/Ichigo-and-Aizen-V-Yhwach-Bleach-Manga-Animation.mp3?rlkey=eexw0rmnwe4fd42gthgr6hyi1&st=t1ysx58k&raw=1" type="audio/mpeg" />
+  </audio>
 
   <div class="vignette"></div>
 
@@ -105,7 +100,7 @@
         </div>
 
         <form id="searchForm" class="search-row" onsubmit="return doSearch();">
-          <input id="q" class="search-input" placeholder="Find bookmarks or search Google" autocomplete="off">
+          <input id="q" class="search-input" placeholder="Find bookmarks or search Google" autocomplete="off" />
           <button class="search-btn" type="submit">Search</button>
         </form>
 
@@ -116,7 +111,6 @@
           <div class="engine" data-url="https://www.bing.com/search?q=">Bing</div>
           <div class="engine" data-url="https://search.brave.com/search?q=">Brave</div>
         </div>
-
       </div>
     </div>
 
@@ -125,27 +119,26 @@
   </div>
 
 <script>
-
   let engines = document.querySelectorAll('.engine');
   let selected = document.querySelector('.engine.selected');
-  engines.forEach(e=>e.addEventListener('click', ()=>{
+  engines.forEach(e => e.addEventListener('click', () => {
     selected.classList.remove('selected');
     e.classList.add('selected');
     selected = e;
   }));
 
-  function doSearch(){
+  function doSearch() {
     const q = document.getElementById('q').value.trim();
-    if(!q) return false;
+    if (!q) return false;
     const url = selected.dataset.url + encodeURIComponent(q);
-    window.open(url,'_blank');
+    window.open(url, '_blank');
     return false;
   }
 
   const toggleBtn = document.getElementById('toggleSearch');
   const searchCard = document.getElementById('searchCard');
-  toggleBtn.addEventListener('click', ()=>{
-    if(searchCard.style.display === 'none'){
+  toggleBtn.addEventListener('click', () => {
+    if (searchCard.style.display === 'none') {
       searchCard.style.display = '';
       toggleBtn.textContent = 'Hide search';
     } else {
@@ -154,17 +147,25 @@
     }
   });
 
-  document.getElementById('openBlank').addEventListener('click', ()=>{
-    window.open('about:blank','_blank');
+  document.getElementById('openBlank').addEventListener('click', () => {
+    window.open('about:blank', '_blank');
   });
 
-  document.getElementById('settings').addEventListener('click', ()=>{
+  document.getElementById('settings').addEventListener('click', () => {
     alert('To set this file as your homepage: Save the file locally, then in Waterfox go to about:preferences#home → Homepage and new windows → Custom URLs and paste the file path (file:///C:/path/to/portal_homepage.html).');
   });
 
   const video = document.getElementById('bgv');
-  video.addEventListener('click', ()=>{
-    if(video.paused) video.play(); else video.pause();
+  video.addEventListener('click', () => {
+    if (video.paused) video.play(); else video.pause();
+  });
+
+  document.body.addEventListener('click', () => {
+    const audio = document.getElementById('bgMusic');
+    if (audio.muted) {
+      audio.muted = false;
+      audio.volume = 0.5;
+    }
   });
 
   (function() {
@@ -217,13 +218,7 @@
         height: el.offsetHeight + 'px'
       }));
     }).observe(el);
-
   })();
-
-  document.body.addEventListener('click', () => {
-    const yt = document.getElementById('ytMusic');
-    // No unmute needed for iframe muted autoplay
-  });
 
 </script>
 </body>
