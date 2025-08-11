@@ -32,7 +32,21 @@
     .icon-btn{background:var(--glass);border:1px solid rgba(255,255,255,0.04);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
 
     .center-wrap{flex:1;display:flex;align-items:center;justify-content:center}
-    .search-card{backdrop-filter:blur(6px);background:linear-gradient(180deg, rgba(28,28,34,0.25), rgba(12,12,16,0.35));border-radius:14px;padding:16px;min-width:38vw;max-width:1100px;border:1px solid rgba(170,0,255,0.08);box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+    .search-card {
+      backdrop-filter: blur(6px);
+      background: linear-gradient(180deg, rgba(28,28,34,0.25), rgba(12,12,16,0.35));
+      border-radius: 14px;
+      padding: 16px;
+      min-width: 38vw;
+      max-width: 1100px;
+      border: 1px solid rgba(170,0,255,0.08);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+      resize: both;
+      overflow: auto;
+      min-width: 250px;
+      min-height: 100px;
+      transition: left 0.15s ease, top 0.15s ease, width 0.15s ease, height 0.15s ease;
+    }
 
     .search-row{display:flex;gap:10px;align-items:center}
     .search-input{flex:1;padding:14px 16px;border-radius:10px;border:none;background:rgba(255,255,255,0.03);color:var(--text);font-size:16px;outline:2px solid transparent}
@@ -138,7 +152,6 @@
     alert('To set this file as your homepage: Save the file locally, then in Waterfox go to about:preferences#home → Homepage and new windows → Custom URLs and paste the file path (file:///C:/path/to/portal_homepage.html).');
   });
 
-  // pause/play on click
   const video = document.getElementById('bgv');
   video.addEventListener('click', ()=>{
     if(video.paused) video.play(); else video.pause();
@@ -154,6 +167,13 @@
     el.style.left = left;
     el.style.top = top;
     el.style.transform = 'translate(0, 0)';
+  }
+
+  const savedSize = localStorage.getItem('searchCardSize');
+  if (savedSize) {
+    const { width, height } = JSON.parse(savedSize);
+    el.style.width = width;
+    el.style.height = height;
   }
 
   el.addEventListener('mousedown', function(e) {
@@ -173,12 +193,21 @@
   document.addEventListener('mouseup', function() {
     if (isDragging) {
       isDragging = false;
+      el.style.transition = 'left 0.15s ease, top 0.15s ease, width 0.15s ease, height 0.15s ease';
       localStorage.setItem('searchCardPos', JSON.stringify({
         left: el.style.left,
         top: el.style.top
       }));
     }
   });
+
+  new ResizeObserver(() => {
+    localStorage.setItem('searchCardSize', JSON.stringify({
+      width: el.offsetWidth + 'px',
+      height: el.offsetHeight + 'px'
+    }));
+  }).observe(el);
+
 })();
 </script>
 </body>
