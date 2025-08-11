@@ -74,6 +74,16 @@
       Your browser does not support embedded videos.
     </video>
   </div>
+
+  <iframe
+    id="ytMusic"
+    style="display:none"
+    src="https://www.youtube.com/embed/GDEaBvnzSfs?autoplay=1&loop=1&playlist=GDEaBvnzSfs&mute=1"
+    frameborder="0"
+    allow="autoplay"
+    allowfullscreen
+  ></iframe>
+
   <div class="vignette"></div>
 
   <div class="ui">
@@ -157,58 +167,64 @@
     if(video.paused) video.play(); else video.pause();
   });
 
-(function() {
-  const el = document.getElementById('searchCard');
-  let offsetX, offsetY, isDragging = false;
+  (function() {
+    const el = document.getElementById('searchCard');
+    let offsetX, offsetY, isDragging = false;
 
-  const savedPos = localStorage.getItem('searchCardPos');
-  if (savedPos) {
-    const { left, top } = JSON.parse(savedPos);
-    el.style.left = left;
-    el.style.top = top;
-    el.style.transform = 'translate(0, 0)';
-  }
-
-  const savedSize = localStorage.getItem('searchCardSize');
-  if (savedSize) {
-    const { width, height } = JSON.parse(savedSize);
-    el.style.width = width;
-    el.style.height = height;
-  }
-
-  el.addEventListener('mousedown', function(e) {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.closest('.engine')) return;
-    isDragging = true;
-    offsetX = e.clientX - el.offsetLeft;
-    offsetY = e.clientY - el.offsetTop;
-    el.style.transition = 'none';
-  });
-
-  document.addEventListener('mousemove', function(e) {
-    if (!isDragging) return;
-    el.style.left = (e.clientX - offsetX) + 'px';
-    el.style.top = (e.clientY - offsetY) + 'px';
-  });
-
-  document.addEventListener('mouseup', function() {
-    if (isDragging) {
-      isDragging = false;
-      el.style.transition = 'left 0.15s ease, top 0.15s ease, width 0.15s ease, height 0.15s ease';
-      localStorage.setItem('searchCardPos', JSON.stringify({
-        left: el.style.left,
-        top: el.style.top
-      }));
+    const savedPos = localStorage.getItem('searchCardPos');
+    if (savedPos) {
+      const { left, top } = JSON.parse(savedPos);
+      el.style.left = left;
+      el.style.top = top;
+      el.style.transform = 'translate(0, 0)';
     }
+
+    const savedSize = localStorage.getItem('searchCardSize');
+    if (savedSize) {
+      const { width, height } = JSON.parse(savedSize);
+      el.style.width = width;
+      el.style.height = height;
+    }
+
+    el.addEventListener('mousedown', function(e) {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.closest('.engine')) return;
+      isDragging = true;
+      offsetX = e.clientX - el.offsetLeft;
+      offsetY = e.clientY - el.offsetTop;
+      el.style.transition = 'none';
+    });
+
+    document.addEventListener('mousemove', function(e) {
+      if (!isDragging) return;
+      el.style.left = (e.clientX - offsetX) + 'px';
+      el.style.top = (e.clientY - offsetY) + 'px';
+    });
+
+    document.addEventListener('mouseup', function() {
+      if (isDragging) {
+        isDragging = false;
+        el.style.transition = 'left 0.15s ease, top 0.15s ease, width 0.15s ease, height 0.15s ease';
+        localStorage.setItem('searchCardPos', JSON.stringify({
+          left: el.style.left,
+          top: el.style.top
+        }));
+      }
+    });
+
+    new ResizeObserver(() => {
+      localStorage.setItem('searchCardSize', JSON.stringify({
+        width: el.offsetWidth + 'px',
+        height: el.offsetHeight + 'px'
+      }));
+    }).observe(el);
+
+  })();
+
+  document.body.addEventListener('click', () => {
+    const yt = document.getElementById('ytMusic');
+    // No unmute needed for iframe muted autoplay
   });
 
-  new ResizeObserver(() => {
-    localStorage.setItem('searchCardSize', JSON.stringify({
-      width: el.offsetWidth + 'px',
-      height: el.offsetHeight + 'px'
-    }));
-  }).observe(el);
-
-})();
 </script>
 </body>
 </html>
