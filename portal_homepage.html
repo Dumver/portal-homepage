@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Purple Portals — Home</title>
+
+  <!-- Orbitron font for sci-fi look -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --accent: #aa00ff; /* neon purple */
+      --accent-weak: rgba(170,0,255,0.25);
+      --glass: rgba(20,20,25,0.35);
+      --glass-strong: rgba(18,18,20,0.65);
+      --text: #ffffff;
+    }
+
+    html,body{height:100%;margin:0;font-family:Orbitron, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+    .video-bg{
+      position:fixed;inset:0;z-index:0;overflow:hidden;background:#000;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .video-bg video{min-width:100%;min-height:100%;width:auto;height:auto;object-fit:cover;filter:contrast(1.03) saturate(1.1);}
+
+    /* overlay to gently darken edges so UI is readable */
+    .vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center, rgba(0,0,0,0.00) 30%, rgba(0,0,0,0.45) 100%);z-index:1}
+
+    /* Container for UI */
+    .ui{position:relative;z-index:2;padding:28px;display:flex;flex-direction:column;gap:18px;min-height:100%;box-sizing:border-box}
+
+    /* Top-right control row */
+    .controls{display:flex;gap:10px;align-items:center;justify-content:flex-end}
+    .dot{width:18px;height:18px;border-radius:50%;background:var(--accent);box-shadow:0 0 18px var(--accent-weak) inset;}
+    .icon-btn{background:var(--glass);border:1px solid rgba(255,255,255,0.04);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
+
+    /* Center search bar */
+    .center-wrap{flex:1;display:flex;align-items:center;justify-content:center}
+    .search-card{backdrop-filter:blur(6px);background:linear-gradient(180deg, rgba(28,28,34,0.25), rgba(12,12,16,0.35));border-radius:14px;padding:16px;min-width:38vw;max-width:1100px;border:1px solid rgba(170,0,255,0.08);box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+
+    .search-row{display:flex;gap:10px;align-items:center}
+    .search-input{flex:1;padding:14px 16px;border-radius:10px;border:none;background:rgba(255,255,255,0.03);color:var(--text);font-size:16px;outline:2px solid transparent}
+    .search-input::placeholder{color:rgba(255,255,255,0.35)}
+
+    .search-btn{padding:12px 16px;border-radius:10px;border:none;background:linear-gradient(180deg,var(--accent),#6a00d9);color:white;font-weight:700;cursor:pointer;box-shadow:0 6px 22px var(--accent-weak)}
+
+    .engine-row{display:flex;gap:8px;margin-top:10px}
+    .engine{padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:rgba(255,255,255,0.02);color:rgba(255,255,255,0.8);cursor:pointer}
+    .engine.selected{box-shadow:0 6px 20px var(--accent-weak);border-color:var(--accent)}
+
+    /* small footer note */
+    .footer{color:rgba(255,255,255,0.45);font-size:12px}
+
+    /* responsive tweaks */
+    @media (max-width:720px){.search-card{min-width:86vw;padding:12px}.search-input{font-size:14px}}
+
+    /* hide scrollbar while preserving scroll capability */
+    ::-webkit-scrollbar{width:8px}
+    ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:8px}
+  </style>
+</head>
+<body>
+
+  <div class="video-bg">
+    <video id="bgv" autoplay muted loop playsinline>
+      <source src="https://files.catbox.moe/jjwj4w.mp4" type="video/mp4">
+      Your browser does not support embedded videos.
+    </video>
+  </div>
+  <div class="vignette"></div>
+
+  <div class="ui">
+    <div class="controls">
+      <div class="dot" title="Accent"></div>
+      <button class="icon-btn" id="toggleSearch">Hide search</button>
+      <button class="icon-btn" id="openBlank">Open blank</button>
+      <button class="icon-btn" id="settings" title="Open file location">⚙</button>
+    </div>
+
+    <div class="center-wrap">
+      <div class="search-card" id="searchCard">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <div style="font-size:13px;color:var(--text);opacity:0.9">Purple Portals</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div style="width:10px;height:10px;border-radius:50%;background:var(--accent)"></div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.5)">Theme</div>
+          </div>
+        </div>
+
+        <form id="searchForm" class="search-row" onsubmit="return doSearch();">
+          <input id="q" class="search-input" placeholder="Find bookmarks or search Google" autocomplete="off">
+          <button class="search-btn" type="submit">Search</button>
+        </form>
+
+        <div class="engine-row" id="engines">
+          <div class="engine selected" data-url="https://www.google.com/search?q=">Google</div>
+          <div class="engine" data-url="https://duckduckgo.com/?q=">DuckDuckGo</div>
+          <div class="engine" data-url="https://www.bing.com/search?q=">Bing</div>
+          <div class="engine" data-url="https://search.brave.com/search?q=">Brave</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div style="height:10px"></div>
+    <div class="footer">Tip: save this file and set it as your homepage in Waterfox (about:preferences → Home → Custom URLs → file:///…)</div>
+  </div>
+
+<script>
+  // engine selection
+  let engines = document.querySelectorAll('.engine');
+  let selected = document.querySelector('.engine.selected');
+  engines.forEach(e=>e.addEventListener('click', ()=>{
+    selected.classList.remove('selected');
+    e.classList.add('selected');
+    selected = e;
+  }));
+
+  function doSearch(){
+    const q = document.getElementById('q').value.trim();
+    if(!q) return false;
+    const url = selected.dataset.url + encodeURIComponent(q);
+    window.open(url,'_blank');
+    return false;
+  }
+
+  // toggle search visibility
+  const toggleBtn = document.getElementById('toggleSearch');
+  const searchCard = document.getElementById('searchCard');
+  toggleBtn.addEventListener('click', ()=>{
+    if(searchCard.style.display === 'none'){
+      searchCard.style.display = '';
+      toggleBtn.textContent = 'Hide search';
+    } else {
+      searchCard.style.display = 'none';
+      toggleBtn.textContent = 'Show search';
+    }
+  });
+
+  // open blank page
+  document.getElementById('openBlank').addEventListener('click', ()=>{
+    window.open('about:blank','_blank');
+  });
+
+  // settings open folder - best-effort (can't access local FS from browser), so show instructions
+  document.getElementById('settings').addEventListener('click', ()=>{
+    alert('To set this file as your homepage: Save the file locally, then in Waterfox go to about:preferences#home → Homepage and new windows → Custom URLs and paste the file path (file:///C:/path/to/portal_homepage.html).');
+  });
+
+  // pause/play on click
+  const video = document.getElementById('bgv');
+  video.addEventListener('click', ()=>{
+    if(video.paused) video.play(); else video.pause();
+  });
+
+</script>
+</body>
+</html>
