@@ -165,6 +165,7 @@
     if (audio.muted) {
       audio.muted = false;
       audio.volume = 0.5;
+      audio.play().catch(err => console.warn('Audio play blocked:', err));
     }
   });
 
