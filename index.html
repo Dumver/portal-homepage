@@ -1,99 +1,524 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Purple Portals — Home</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-<style>
-  body {
-    margin: 0; font-family: 'Orbitron', sans-serif; background: black; color: white;
-    display: flex; align-items: center; justify-content: center; height: 100vh;
-    background-size: cover; background-position: center; overflow: hidden;
-  }
-  #search-container {
-    background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; text-align: center;
-    position: relative; min-width: 250px; cursor: move;
-  }
-  #search-box {
-    width: 100%; padding: 8px; font-size: 16px; border: none; border-radius: 5px;
-  }
-  #controls { margin-top: 10px; display: flex; align-items: center; justify-content: space-between; }
-  #volume-container { display: flex; align-items: center; gap: 5px; }
-  #status-dot {
-    width: 12px; height: 12px; border-radius: 50%; display: inline-block;
-    background: red; margin-left: 5px;
-  }
-  #music-toggle { cursor: pointer; font-size: 18px; }
-  input[type=range] {
-    -webkit-appearance: none; height: 4px; background: #888; border-radius: 2px;
-  }
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 12px; height: 12px; background: white; border-radius: 50%;
-  }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gex - Male</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --accent: #aa00ff;
+      --accent-weak: rgba(170,0,255,0.25);
+      --glass: rgba(20,20,25,0.35);
+      --glass-strong: rgba(18,18,20,0.65);
+      --text: #ffffff;
+      --dark-grey: #333;
+    }
+
+    html,body{height:100%;margin:0;font-family:Orbitron, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+    .video-bg{
+      position:fixed;inset:0;z-index:0;overflow:hidden;background:#000;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .video-bg video{min-width:100%;min-height:100%;width:auto;height:auto;object-fit:cover;filter:contrast(1.03) saturate(1.1);}
+
+    .vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center, rgba(0,0,0,0.00) 30%, rgba(0,0,0,0.45) 100%);z-index:1}
+
+    .ui{position:relative;z-index:2;padding:28px;display:flex;flex-direction:column;gap:18px;min-height:100%;box-sizing:border-box}
+
+    .controls{display:flex;gap:10px;align-items:center;justify-content:flex-end}
+    .dot{width:18px;height:18px;border-radius:50%;background:var(--accent);box-shadow:0 0 18px var(--accent-weak) inset;}
+    .icon-btn{background:var(--glass);border:1px solid rgba(255,255,255,0.04);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
+
+    .center-wrap{flex:1;display:flex;align-items:center;justify-content:center}
+    .search-card {
+      backdrop-filter: blur(6px);
+      background: linear-gradient(180deg, rgba(28,28,34,0.25), rgba(12,12,16,0.35));
+      border-radius: 14px;
+      padding: 12px;
+      min-width: 260px;
+      max-width: 1100px;
+      border: 1px solid rgba(170,0,255,0.08);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+      overflow: auto;
+      min-height: 100px;
+      transition: left 0.15s ease, top 0.15s ease, width 0.15s ease, height 0.15s ease;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .search-card.dragging { cursor: grabbing; user-select: none; -webkit-user-select: none; }
+
+    .search-header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:4px 4px 8px 4px; cursor:grab; }
+    .search-header.no-drag { cursor: default; }
+
+    .search-row{display:flex;gap:10px;align-items:center}
+    .search-input{flex:1;padding:14px 16px;border-radius:10px;border:none;background:rgba(255,255,255,0.03);color:var(--text);font-size:16px;outline:2px solid transparent}
+    .search-input::placeholder{color:rgba(255,255,255,0.35)}
+
+    .search-btn{padding:12px 16px;border-radius:10px;border:none;background:linear-gradient(180deg,var(--accent),#6a00d9);color:white;font-weight:700;cursor:pointer;box-shadow:0 6px 22px var(--accent-weak)}
+
+    .engine-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+    .engine{padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:rgba(255,255,255,0.02);color:rgba(255,255,255,0.8);cursor:pointer}
+    .engine.selected{box-shadow:0 6px 20px var(--accent-weak);border-color:var(--accent)}
+
+    .resize-handle {
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      width: 16px;
+      height: 16px;
+      cursor: nwse-resize;
+      border-radius: 4px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      opacity:0.9;
+    }
+    .resize-handle:after {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-right:2px solid rgba(255,255,255,0.08);
+      border-bottom:2px solid rgba(255,255,255,0.08);
+      transform: rotate(45deg);
+    }
+
+    .footer{color:rgba(255,255,255,0.45);font-size:12px}
+
+    @media (max-width:720px){.search-card{min-width:86vw;padding:12px}.search-input{font-size:14px}}
+
+    ::-webkit-scrollbar{width:8px}
+    ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:8px}
+
+    /* AUDIO UI (bottom-left) */
+    #audioControl { position: fixed; left: 18px; bottom: 18px; z-index: 9999; display:flex; flex-direction: column-reverse; align-items:flex-start; gap:8px; pointer-events:auto; }
+    .audio-toggle { width:44px;height:44px;border-radius:50%;background:var(--glass);border:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text);box-shadow:0 6px 18px rgba(0,0,0,0.5); transition: transform 180ms ease; }
+    .audio-panel { transform: translateY(120%); opacity:0; transition: transform 280ms cubic-bezier(.2,.9,.2,1), opacity 220ms ease; background: rgba(8,8,10,0.45); border: 1px solid rgba(170,0,255,0.08); backdrop-filter: blur(6px); border-radius:12px; padding:10px; min-width:200px; box-shadow:0 10px 40px rgba(0,0,0,0.6); pointer-events:auto; }
+    #audioControl.open .audio-panel { transform: translateY(0); opacity:1; }
+
+    .volume-row input[type="range"]{ -webkit-appearance:none; appearance:none; width:140px; height:8px; border-radius:8px; background: linear-gradient(90deg, var(--accent) 50%, var(--dark-grey) 50%); outline:none; cursor:pointer; transition: box-shadow 150ms ease; }
+    .volume-row input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:16px;height:16px;border-radius:50%; background:var(--accent); box-shadow:0 4px 14px rgba(170,0,255,0.18); border:2px solid rgba(255,255,255,0.08); }
+    .vol-label { font-size:12px;color:rgba(255,255,255,0.7);min-width:28px;text-align:right; }
+
+    #loadStatus {
+      position: fixed;
+      right: 12px;
+      top: 12px;
+      z-index: 10000;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      box-shadow: 0 0 12px rgba(0,0,0,0.6), 0 0 6px rgba(0,0,0,0.4) inset;
+      border: 2px solid rgba(255,255,255,0.06);
+      transition: background-color 180ms ease, box-shadow 220ms ease;
+    }
+    #loadStatus[data-state="none"] { background: #e53935; box-shadow: 0 0 14px rgba(229,57,53,0.35); }
+    #loadStatus[data-state="one"]  { background: #2196f3; box-shadow: 0 0 14px rgba(33,150,243,0.35); }
+    #loadStatus[data-state="both"] { background: var(--accent); box-shadow: 0 0 18px rgba(170,0,255,0.35); }
+  </style>
 </head>
 <body>
-<div id="search-container">
-  <input id="search-box" placeholder="Search..." autofocus>
-  <div id="controls">
-    <div id="volume-container">
-      <span id="music-toggle">🔊</span>
-      <input id="volume-slider" type="range" min="0" max="100" value="50">
-    </div>
-    <span id="status-dot"></span>
+
+  <div class="video-bg">
+    <video id="bgv" autoplay muted loop playsinline preload="auto">
+      <source src="https://files.catbox.moe/jjwj4w.mp4" type="video/mp4">
+    </video>
   </div>
-</div>
-<audio id="bg-music" loop></audio>
+
+  <audio id="bgMusic" preload="auto" loop muted>
+    <source src="https://files.catbox.moe/7jqjg1.mp3" type="audio/mpeg" />
+  </audio>
+
+  <div id="loadStatus" data-state="none" title="Loading status"></div>
+
+  <div class="vignette"></div>
+
+  <div class="ui">
+    <div class="controls">
+      <div class="dot" title="Accent"></div>
+      <button class="icon-btn" id="toggleSearch">Hide search</button>
+      <button class="icon-btn" id="openBlank">Open blank</button>
+      <button class="icon-btn" id="settings" title="Open file location">⚙</button>
+    </div>
+
+    <div class="center-wrap">
+      <div class="search-card" id="searchCard">
+        <div class="search-header" id="dragHandle">
+          <div style="font-size:13px;color:var(--text);opacity:0.9">Purple Portals</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div style="width:10px;height:10px;border-radius:50%;background:var(--accent)"></div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.5)">Theme</div>
+          </div>
+        </div>
+
+        <form id="searchForm" class="search-row" onsubmit="return doSearch();">
+          <input id="q" class="search-input no-drag" placeholder="Find bookmarks or search Startpage" autocomplete="off" />
+          <button class="search-btn no-drag" type="submit">Search</button>
+        </form>
+
+        <div class="engine-row" id="engines">
+          <div class="engine selected no-drag" data-url="https://www.startpage.com/do/search?q=">Startpage</div>
+          <div class="engine no-drag" data-url="https://www.google.com/search?q=">Google</div>
+          <div class="engine no-drag" data-url="https://duckduckgo.com/?q=">DuckDuckGo</div>
+          <div class="engine no-drag" data-url="https://www.bing.com/search?q=">Bing</div>
+          <div class="engine no-drag" data-url="https://search.brave.com/search?q=">Brave</div>
+        </div>
+
+        <div class="resize-handle" id="resizeHandle" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <div style="height:10px"></div>
+    <div class="footer">Tip: Why are you here</div>
+  </div>
+
+  <!-- AUDIO CONTROL (bottom-left) -->
+  <div id="audioControl" aria-hidden="false">
+    <div class="audio-panel" role="dialog" aria-label="Audio panel">
+      <div class="panel-inner">
+        <div class="panel-title">Audio</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="vol-label" id="volPct">50%</div>
+          <div class="volume-row">
+            <input id="volumeSlider" type="range" min="0" max="100" step="1" />
+          </div>
+          <button id="muteBtn" class="mute-btn" title="Mute / Unmute">🔈</button>
+        </div>
+      </div>
+    </div>
+
+    <button id="audioToggle" class="audio-toggle" title="Audio controls" aria-expanded="false" aria-controls="audioPanel" aria-label="Open audio controls">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 9v6h4l5 4V5L9 9H5z" fill="currentColor"/>
+        <path d="M16.5 8.5a4 4 0 010 7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+    </button>
+  </div>
 
 <script>
-const searchBox = document.getElementById("search-box"),
-      music = document.getElementById("bg-music"),
-      volSlider = document.getElementById("volume-slider"),
-      toggle = document.getElementById("music-toggle"),
-      statusDot = document.getElementById("status-dot"),
-      container = document.getElementById("search-container");
-
-let musicLoaded = false, bgLoaded = false;
-
-// Background
-const bg = new Image();
-bg.src = "background.jpg";
-bg.onload = () => { document.body.style.backgroundImage = `url(${bg.src})`; bgLoaded = true; updateStatus(); };
-
-// Music
-music.src = "music.mp3";
-music.oncanplaythrough = () => { musicLoaded = true; updateStatus(); };
-
-function updateStatus() {
-  statusDot.style.background = musicLoaded && bgLoaded ? "purple" :
-                               musicLoaded || bgLoaded ? "blue" : "red";
-  document.querySelector("link[rel='icon']")?.remove();
-  const icon = document.createElement("link");
-  icon.rel = "icon";
-  icon.href = musicLoaded && bgLoaded ? "purple.ico" :
-              musicLoaded || bgLoaded ? "blue.ico" : "red.ico";
-  document.head.appendChild(icon);
+/* ======= status & favicon helper ======= */
+function setLoadStatus(state) {
+  const el = document.getElementById('loadStatus');
+  el.setAttribute('data-state', state);
+  const colorMap = { none:'#e53935', one:'#2196f3', both:'#aa00ff' };
+  const c = colorMap[state] || '#666';
+  const cvs = document.createElement('canvas');
+  cvs.width = cvs.height = 32;
+  const ctx = cvs.getContext('2d');
+  ctx.clearRect(0,0,32,32);
+  ctx.beginPath();
+  ctx.arc(16,16,10,0,Math.PI*2);
+  ctx.fillStyle = c;
+  ctx.shadowColor = c;
+  ctx.shadowBlur = 8;
+  ctx.fill();
+  const link = document.querySelector("link[rel~='icon']") || document.createElement('link');
+  link.rel = 'icon';
+  link.href = cvs.toDataURL('image/png');
+  if (!document.querySelector("link[rel~='icon']")) document.head.appendChild(link);
+  const base = 'Purple Portals — Home';
+  document.title = base;
 }
 
-toggle.onclick = () => {
-  if (music.paused) music.play(); else music.pause();
-  toggle.textContent = music.paused ? "🔇" : "🔊";
-};
-volSlider.oninput = e => { music.volume = e.target.value / 100; };
+/* ======= video + audio load tracking ======= */
+const video = document.getElementById('bgv');
+const audio = document.getElementById('bgMusic');
+let videoReady = false, audioReady = false;
 
-// Search
-searchBox.addEventListener("keydown", e => {
-  if (e.key === "Enter" && searchBox.value.trim()) {
-    window.open(`https://www.google.com/search?q=${encodeURIComponent(searchBox.value)}`);
-  }
+function updateCombinedState(){
+  const readyCount = (videoReady?1:0) + (audioReady?1:0);
+  if (readyCount === 0) setLoadStatus('none');
+  else if (readyCount === 1) setLoadStatus('one');
+  else setLoadStatus('both');
+}
+
+video.addEventListener('loadeddata', ()=>{ videoReady = true; updateCombinedState(); });
+video.addEventListener('canplay', ()=>{ videoReady = true; updateCombinedState(); });
+video.addEventListener('error', ()=>{ videoReady = false; updateCombinedState(); });
+
+audio.addEventListener('loadeddata', ()=>{ audioReady = true; updateCombinedState(); });
+audio.addEventListener('canplaythrough', ()=>{ audioReady = true; updateCombinedState(); });
+audio.addEventListener('error', ()=>{ audioReady = false; updateCombinedState(); });
+
+if (video.readyState >= 3) { videoReady = true; }
+if (audio.readyState >= 3) { audioReady = true; }
+updateCombinedState();
+
+/* ======= auto start audio when video starts so that the edit actually works lmfao======= */
+function ensureAudioPlaysOnce() {
+  if (!audio) return;
+  const savedVol = localStorage.getItem('portalVolume');
+  if (savedVol !== null) audio.volume = parseFloat(savedVol);
+  else audio.volume = 0.5;
+  audio.muted = false;
+  audio.play().catch(()=>{/*ignore*/});
+}
+
+video.addEventListener('playing', function startAudioWhenVideoPlays() {
+  ensureAudioPlaysOnce();
+  video.removeEventListener('playing', startAudioWhenVideoPlays);
 });
 
-// Dragging
-let offsetX, offsetY, dragging = false;
-container.onmousedown = e => { dragging = true; offsetX = e.clientX - container.offsetLeft; offsetY = e.clientY - container.offsetTop; };
-document.onmouseup = () => dragging = false;
-document.onmousemove = e => { if (dragging) { container.style.left = e.clientX - offsetX + "px"; container.style.top = e.clientY - offsetY + "px"; container.style.position = "absolute"; } };
+const retryAudio = setInterval(() => {
+  if (!audio.paused) {
+    clearInterval(retryAudio); // stop once it's working
+    return;
+  }
+  ensureAudioPlaysOnce();
+}, 2000);
+
+let engines = document.querySelectorAll('.engine');
+let selected = document.querySelector('.engine.selected');
+engines.forEach(e => e.addEventListener('click', () => {
+  if (selected) selected.classList.remove('selected');
+  e.classList.add('selected');
+  selected = e;
+  const q = document.getElementById('q');
+  if (selected) q.placeholder = 'Search ' + (selected.textContent || 'Web');
+}));
+
+function doSearch() {
+  const qv = document.getElementById('q').value.trim();
+  if (!qv) return false;
+  const url = selected.dataset.url + encodeURIComponent(qv);
+  window.open(url, '_blank');
+  return false;
+}
+
+const toggleBtn = document.getElementById('toggleSearch');
+const searchCard = document.getElementById('searchCard');
+toggleBtn.addEventListener('click', () => {
+  if (searchCard.style.display === 'none') {
+    searchCard.style.display = '';
+    toggleBtn.textContent = 'Hide search';
+  } else {
+    searchCard.style.display = 'none';
+    toggleBtn.textContent = 'Show search';
+  }
+});
+document.getElementById('openBlank').addEventListener('click', ()=>window.open('about:blank','_blank'));
+document.getElementById('settings').addEventListener('click', ()=>{ alert('To set this file as your homepage: Save the file locally, then in Waterfox go to about:preferences#home → Homepage and new windows → Custom URLs and paste the file path (file:///C:/path/to/portal_homepage.html).'); });
+
+/* ======= drag + custom resize (fixed, clamped, no text selection) ======= */
+(function(){
+  const el = document.getElementById('searchCard');
+  const dragHandle = document.getElementById('dragHandle');
+  const resizeHandle = document.getElementById('resizeHandle');
+
+  let dragging = false, resizing = false;
+  let startX=0, startY=0, startLeft=0, startTop=0, startW=0, startH=0;
+
+  const savedPos = localStorage.getItem('searchCardPos');
+  if (savedPos) {
+    try {
+      const { left, top } = JSON.parse(savedPos);
+      el.style.left = left;
+      el.style.top = top;
+      el.style.transform = 'translate(0,0)';
+    } catch(e){}
+  }
+  const savedSize = localStorage.getItem('searchCardSize');
+  if (savedSize) {
+    try {
+      const { width, height } = JSON.parse(savedSize);
+      el.style.width = width;
+      el.style.height = height;
+    } catch(e){}
+  }
+
+  function clampPosition(left, top, width, height){
+    const pad = 8;
+    const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+    const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+    const maxLeft = Math.max(pad, vw - width - pad);
+    const maxTop = Math.max(pad, vh - height - pad);
+    left = Math.min(Math.max(left, pad), maxLeft);
+    top = Math.min(Math.max(top, pad), maxTop);
+    return { left, top };
+  }
+
+  dragHandle.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    if (resizing) return;
+    dragging = true;
+    el.classList.add('dragging');
+    startX = e.clientX; startY = e.clientY;
+    const rect = el.getBoundingClientRect();
+    if (el.style.transform && el.style.transform.includes('translate')) {
+      const computed = window.getComputedStyle(el);
+      const left = rect.left + window.scrollX;
+      const top = rect.top + window.scrollY;
+      el.style.left = left + 'px';
+      el.style.top = top + 'px';
+      el.style.transform = 'translate(0,0)';
+    }
+    startLeft = parseFloat(el.style.left || rect.left + 'px') || rect.left;
+    startTop = parseFloat(el.style.top || rect.top + 'px') || rect.top;
+    document.body.style.userSelect = 'none';
+    document.body.style.webkitUserSelect = 'none';
+    document.body.style.pointerEvents = 'auto';
+    e.preventDefault();
+  });
+
+  window.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    e.preventDefault();
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    let newLeft = Math.round(startLeft + dx);
+    let newTop = Math.round(startTop + dy);
+    const width = el.offsetWidth;
+    const height = el.offsetHeight;
+    const clamped = clampPosition(newLeft, newTop, width, height);
+    el.style.left = clamped.left + 'px';
+    el.style.top = clamped.top + 'px';
+  });
+
+  window.addEventListener('pointerup', (e) => {
+    if (dragging) {
+      dragging = false;
+      el.classList.remove('dragging');
+      el.style.transition = 'left 0.15s ease, top 0.15s ease, width 0.15s ease, height 0.15s ease';
+      localStorage.setItem('searchCardPos', JSON.stringify({ left: el.style.left, top: el.style.top }));
+      document.body.style.userSelect = '';
+      document.body.style.webkitUserSelect = '';
+    }
+    if (resizing) {
+      resizing = false;
+      el.style.transition = 'left 0.15s ease, top 0.15s ease, width 0.15s ease, height 0.15s ease';
+      localStorage.setItem('searchCardSize', JSON.stringify({ width: el.offsetWidth + 'px', height: el.offsetHeight + 'px' }));
+      const rect = el.getBoundingClientRect();
+      const clamped = clampPosition(rect.left, rect.top, el.offsetWidth, el.offsetHeight);
+      el.style.left = clamped.left + 'px';
+      el.style.top = clamped.top + 'px';
+      localStorage.setItem('searchCardPos', JSON.stringify({ left: el.style.left, top: el.style.top }));
+      document.body.style.userSelect = '';
+    }
+  });
+
+  /* ===== custom resize via handle ===== */
+  resizeHandle.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    resizing = true;
+    dragging = false;
+    el.classList.remove('dragging');
+    startX = e.clientX; startY = e.clientY;
+    startW = el.offsetWidth; startH = el.offsetHeight;
+    const rect = el.getBoundingClientRect();
+    if (el.style.transform && el.style.transform.includes('translate')) {
+      el.style.left = rect.left + 'px';
+      el.style.top = rect.top + 'px';
+      el.style.transform = 'translate(0,0)';
+    }
+    startLeft = parseFloat(el.style.left || rect.left) || rect.left;
+    startTop = parseFloat(el.style.top || rect.top) || rect.top;
+    el.style.transition = 'none';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+
+  window.addEventListener('pointermove', (e) => {
+    if (!resizing) return;
+    e.preventDefault();
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    let newW = Math.max(220, Math.round(startW + dx));
+    let newH = Math.max(90, Math.round(startH + dy));
+    const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+    const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+    newW = Math.min(newW, vw - startLeft - 8);
+    newH = Math.min(newH, vh - startTop - 8);
+    el.style.width = newW + 'px';
+    el.style.height = newH + 'px';
+  });
+
+  dragHandle.addEventListener('dblclick', () => {
+    el.style.left = (window.innerWidth/2 - el.offsetWidth/2) + 'px';
+    el.style.top = (window.innerHeight/2 - el.offsetHeight/2) + 'px';
+    localStorage.setItem('searchCardPos', JSON.stringify({ left: el.style.left, top: el.style.top }));
+  });
+
+})();
+
+(function(){
+  const el = document.getElementById('searchCard');
+  const ro = new ResizeObserver(() => {
+    localStorage.setItem('searchCardSize', JSON.stringify({ width: el.offsetWidth + 'px', height: el.offsetHeight + 'px' }));
+  });
+  ro.observe(el);
+})();
+
+(function() {
+  const audioControl = document.getElementById('audioControl');
+  const audioToggle = document.getElementById('audioToggle');
+  const volumeSlider = document.getElementById('volumeSlider');
+  const volPct = document.getElementById('volPct');
+  const muteBtn = document.getElementById('muteBtn');
+
+  const savedVol = localStorage.getItem('portalVolume');
+  if (savedVol !== null) audio.volume = parseFloat(savedVol);
+  else audio.volume = 0.5;
+
+  function setSliderBackground(slider, value) {
+    const pct = Math.max(0, Math.min(100, value));
+    slider.style.background = `linear-gradient(90deg, var(--accent) ${pct}%, var(--dark-grey) ${pct}%)`;
+    volPct.textContent = `${Math.round(pct)}%`;
+  }
+  volumeSlider.value = Math.round(audio.volume * 100);
+  setSliderBackground(volumeSlider, volumeSlider.value);
+  updateMuteIcon();
+
+  audioToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    audioControl.classList.toggle('open');
+    audioToggle.setAttribute('aria-expanded', audioControl.classList.contains('open'));
+    if (audio.muted) {
+      audio.muted = false;
+      audio.volume = volumeSlider.value / 100;
+      audio.play().catch(()=>{});
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!audioControl.contains(e.target)) {
+      audioControl.classList.remove('open');
+      audioToggle.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  volumeSlider.addEventListener('input', (e) => {
+    const v = Number(e.target.value);
+    audio.volume = v / 100;
+    if (audio.muted && v > 0) audio.muted = false;
+    setSliderBackground(volumeSlider, v);
+    localStorage.setItem('portalVolume', audio.volume.toString());
+    updateMuteIcon();
+  });
+
+  muteBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    audio.muted = !audio.muted;
+    if (!audio.muted && audio.paused) audio.play().catch(()=>{});
+    updateMuteIcon();
+  });
+
+  function updateMuteIcon() {
+    if (audio.muted || audio.volume === 0) muteBtn.textContent = '🔇';
+    else if (audio.volume < 0.5) muteBtn.textContent = '🔈';
+    else muteBtn.textContent = '🔊';
+  }
+
+  setSliderBackground(volumeSlider, volumeSlider.value);
+})();
 </script>
 </body>
 </html>
