@@ -252,7 +252,7 @@ if (video.readyState >= 3) { videoReady = true; }
 if (audio.readyState >= 3) { audioReady = true; }
 updateCombinedState();
 
-/* ======= user gesture to start audio (robusting ahhhh) ======= */
+/* ======= auto start audio when video starts so that the edit actually works lmfao======= */
 function ensureAudioPlaysOnce() {
   if (!audio) return;
   const savedVol = localStorage.getItem('portalVolume');
@@ -261,10 +261,19 @@ function ensureAudioPlaysOnce() {
   audio.muted = false;
   audio.play().catch(()=>{/*ignore*/});
 }
-window.addEventListener('pointerdown', function startAudioOnce() {
+
+video.addEventListener('playing', function startAudioWhenVideoPlays() {
   ensureAudioPlaysOnce();
-  window.removeEventListener('pointerdown', startAudioOnce);
-}, { once: true });
+  video.removeEventListener('playing', startAudioWhenVideoPlays);
+});
+
+const retryAudio = setInterval(() => {
+  if (!audio.paused) {
+    clearInterval(retryAudio); // stop once it's working
+    return;
+  }
+  ensureAudioPlaysOnce();
+}, 2000);
 
 let engines = document.querySelectorAll('.engine');
 let selected = document.querySelector('.engine.selected');
