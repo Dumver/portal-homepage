@@ -14,6 +14,7 @@
       --glass: rgba(20,20,25,0.35);
       --glass-strong: rgba(18,18,20,0.65);
       --text: #ffffff;
+      --dark-grey: #333;
     }
 
     html,body{height:100%;margin:0;font-family:Orbitron, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
@@ -64,6 +65,89 @@
 
     ::-webkit-scrollbar{width:8px}
     ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:8px}
+
+    /* ---------- AUDIO UI (bottom-left i hate when its visible up top) ---------- */
+    #audioControl {
+      position: fixed;
+      left: 18px;
+      bottom: 18px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column-reverse;
+      align-items: flex-start;
+      gap: 8px;
+      pointer-events: auto;
+    }
+
+    .audio-toggle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--glass);
+      border: 1px solid rgba(255,255,255,0.04);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      color: var(--text);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+      transition: transform 180ms ease;
+    }
+    .audio-toggle:active { transform: scale(0.98); }
+
+    .audio-panel {
+      transform: translateY(120%);
+      opacity: 0;
+      transition: transform 280ms cubic-bezier(.2,.9,.2,1), opacity 220ms ease;
+      background: rgba(8,8,10,0.45);
+      border: 1px solid rgba(170,0,255,0.08);
+      backdrop-filter: blur(6px);
+      border-radius: 12px;
+      padding: 10px;
+      min-width: 200px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      pointer-events: auto;
+    }
+
+    #audioControl.open .audio-panel {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .audio-panel .panel-inner { display:flex;flex-direction:column;gap:8px;color:var(--text);align-items:flex-start }
+    .audio-panel .panel-title { font-size:13px; color:rgba(255,255,255,0.9) }
+
+    .volume-row { display:flex; align-items:center; gap:10px; width:100%; }
+    .volume-row input[type="range"]{
+      -webkit-appearance:none;
+      appearance:none;
+      width: 140px;
+      height: 8px;
+      border-radius: 8px;
+      background: linear-gradient(90deg, var(--accent) 50%, var(--dark-grey) 50%);
+      outline:none;
+      cursor:pointer;
+      transition: box-shadow 150ms ease;
+    }
+    .volume-row input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance:none;
+      width:16px;height:16px;border-radius:50%;
+      background:var(--accent);
+      box-shadow:0 4px 14px rgba(170,0,255,0.18);
+      border:2px solid rgba(255,255,255,0.08);
+    }
+    .volume-row input[type="range"]::-moz-range-thumb {
+      width:16px;height:16px;border-radius:50%;
+      background:var(--accent);
+      border: none;
+    }
+
+    .mute-btn {
+      width:36px;height:28px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer
+    }
+
+    /* tiny label */
+    .vol-label { font-size:12px;color:rgba(255,255,255,0.7);min-width:28px;text-align:right }
   </style>
 </head>
 <body>
@@ -116,6 +200,30 @@
 
     <div style="height:10px"></div>
     <div class="footer">Tip: Why are you here</div>
+  </div>
+
+  <!-- AUDIO CONTROL (bottom-left) -->
+  <div id="audioControl" aria-hidden="false">
+    <div class="audio-panel" role="dialog" aria-label="Audio panel">
+      <div class="panel-inner">
+        <div class="panel-title">Audio</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="vol-label" id="volPct">50%</div>
+          <div class="volume-row">
+            <input id="volumeSlider" type="range" min="0" max="100" step="1" />
+          </div>
+          <button id="muteBtn" class="mute-btn" title="Mute / Unmute">🔈</button>
+        </div>
+      </div>
+    </div>
+
+    <button id="audioToggle" class="audio-toggle" title="Audio controls" aria-expanded="false" aria-controls="audioPanel" aria-label="Open audio controls">
+      <!-- simple speaker SVG -->
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 9v6h4l5 4V5L9 9H5z" fill="currentColor"/>
+        <path d="M16.5 8.5a4 4 0 010 7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+    </button>
   </div>
 
 <script>
@@ -221,6 +329,88 @@
     }).observe(el);
   })();
 
+  /* ---------- AUDIO UI SCRIPT TYPE SHIIIII ---------- */
+  (function() {
+    const audioControl = document.getElementById('audioControl');
+    const audioToggle = document.getElementById('audioToggle');
+    const audioPanel = audioControl.querySelector('.audio-panel');
+    const volumeSlider = document.getElementById('volumeSlider');
+    const volPct = document.getElementById('volPct');
+    const muteBtn = document.getElementById('muteBtn');
+    const audio = document.getElementById('bgMusic');
+
+    const savedVol = localStorage.getItem('portalVolume');
+    if (savedVol !== null) {
+      audio.volume = parseFloat(savedVol);
+    } else {
+      audio.volume = 0.5;
+    }
+
+    function setSliderBackground(slider, value) {
+      const pct = Math.max(0, Math.min(100, value));
+      slider.style.background = `linear-gradient(90deg, var(--accent) ${pct}%, var(--dark-grey) ${pct}%)`;
+      volPct.textContent = `${Math.round(pct)}%`;
+    }
+    volumeSlider.value = Math.round(audio.volume * 100);
+    setSliderBackground(volumeSlider, volumeSlider.value);
+    updateMuteIcon();
+
+    audioToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      audioControl.classList.toggle('open');
+      audioToggle.setAttribute('aria-expanded', audioControl.classList.contains('open'));
+      if (audio.muted) {
+        audio.muted = false;
+        audio.volume = volumeSlider.value / 100;
+        audio.play().catch(err => console.warn('Audio play blocked:', err));
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!audioControl.contains(e.target)) {
+        audioControl.classList.remove('open');
+        audioToggle.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    volumeSlider.addEventListener('input', (e) => {
+      const v = Number(e.target.value);
+      audio.volume = v / 100;
+      if (audio.muted && v > 0) audio.muted = false;
+      setSliderBackground(volumeSlider, v);
+      localStorage.setItem('portalVolume', audio.volume.toString());
+      updateMuteIcon();
+    });
+
+    muteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      audio.muted = !audio.muted;
+      if (!audio.muted && audio.paused) {
+        audio.play().catch(err => console.warn('Audio play blocked:', err));
+      }
+      updateMuteIcon();
+    });
+
+    function updateMuteIcon() {
+      if (audio.muted || audio.volume === 0) {
+        muteBtn.textContent = '🔇';
+      } else if (audio.volume < 0.5) {
+        muteBtn.textContent = '🔈';
+      } else {
+        muteBtn.textContent = '🔊';
+      }
+    }
+
+    setSliderBackground(volumeSlider, volumeSlider.value);
+
+    document.addEventListener('click', () => {
+      if (audio.muted) {
+        audio.muted = false;
+        audio.volume = volumeSlider.value / 100;
+        audio.play().catch(() => {});
+      }
+    });
+  })();
 </script>
 </body>
 </html>
