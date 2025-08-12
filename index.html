@@ -507,7 +507,9 @@ document.getElementById('settings').addEventListener('click', ()=>{ alert('To se
   muteBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     audio.muted = !audio.muted;
-    if (!audio.muted && audio.paused) audio.play().catch(()=>{});
+    if (!audio.muted && audio.paused) {
+      audio.play().catch(()=>{});
+    }
     updateMuteIcon();
   });
 
