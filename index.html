@@ -134,7 +134,7 @@
   </div>
 
   <audio id="bgMusic" preload="auto" loop muted>
-    <source src="https://files.catbox.moe/7jqjg1.mp3" type="audio/mpeg" />
+    <source src="https://www.dropbox.com/scl/fi/vjio71h70h2gr3sasi6fh/Ichigo-and-Aizen-V-Yhwach-Bleach-Manga-Animation.mp3?rlkey=eexw0rmnwe4fd42gthgr6hyi1&st=t1ysx58k&raw=1" type="audio/mpeg" />
   </audio>
 
   <div id="loadStatus" data-state="none" title="Loading status"></div>
@@ -177,7 +177,7 @@
     </div>
 
     <div style="height:10px"></div>
-    <div class="footer" id="tipText">Tip: Why are you here</div>
+    <div class="footer">Tip: Why are you here</div>
   </div>
 
   <!-- AUDIO CONTROL (bottom-left) -->
@@ -207,7 +207,6 @@
 /* ======= status & favicon helper ======= */
 function setLoadStatus(state) {
   const el = document.getElementById('loadStatus');
-  if (!el) return;
   el.setAttribute('data-state', state);
   const colorMap = { none:'#e53935', one:'#2196f3', both:'#aa00ff' };
   const c = colorMap[state] || '#666';
@@ -225,8 +224,8 @@ function setLoadStatus(state) {
   link.rel = 'icon';
   link.href = cvs.toDataURL('image/png');
   if (!document.querySelector("link[rel~='icon']")) document.head.appendChild(link);
-  // keep title consistent
-  document.title = 'Purple Portals — Home';
+  const base = 'Purple Portals — Home';
+  document.title = base;
 }
 
 /* ======= video + audio load tracking ======= */
@@ -243,69 +242,30 @@ function updateCombinedState(){
 
 video.addEventListener('loadeddata', ()=>{ videoReady = true; updateCombinedState(); });
 video.addEventListener('canplay', ()=>{ videoReady = true; updateCombinedState(); });
-video.addEventListener('playing', ()=>{ videoReady = true; updateCombinedState(); });
 video.addEventListener('error', ()=>{ videoReady = false; updateCombinedState(); });
 
 audio.addEventListener('loadeddata', ()=>{ audioReady = true; updateCombinedState(); });
 audio.addEventListener('canplaythrough', ()=>{ audioReady = true; updateCombinedState(); });
-audio.addEventListener('playing', ()=>{ audioReady = true; updateCombinedState(); });
 audio.addEventListener('error', ()=>{ audioReady = false; updateCombinedState(); });
 
-// initial quick-check
 if (video.readyState >= 3) { videoReady = true; }
 if (audio.readyState >= 3) { audioReady = true; }
 updateCombinedState();
 
-/* ======= auto-start audio when appropriate (with retry & fallback) ======= */
+/* ======= user gesture to start audio (robusting ahhhh) ======= */
 function ensureAudioPlaysOnce() {
   if (!audio) return;
   const savedVol = localStorage.getItem('portalVolume');
   if (savedVol !== null) audio.volume = parseFloat(savedVol);
   else audio.volume = 0.5;
-  // try to unmute & play
   audio.muted = false;
-  audio.play().then(()=> {
-    // playing
-    audioReady = true;
-    updateCombinedState();
-  }).catch((err)=> {
-    // Could be blocked until user gesture — ignore silently
-    // console.log('audio.play blocked:', err);
-  });
+  audio.play().catch(()=>{/*ignore*/});
 }
-
-// start audio when video begins playing
-if (video) {
-  const startOnPlaying = () => {
-    ensureAudioPlaysOnce();
-    video.removeEventListener('playing', startOnPlaying);
-  };
-  video.addEventListener('playing', startOnPlaying);
-}
-
-// fallback: ensure we try once on first user gesture
-function attachUserStart() {
-  function onFirstGesture() {
-    ensureAudioPlaysOnce();
-    window.removeEventListener('pointerdown', onFirstGesture);
-  }
-  window.addEventListener('pointerdown', onFirstGesture, { once: true });
-}
-attachUserStart();
-
-// retry every 2s until audio is actually playing (or until page unload)
-const audioRetry = setInterval(() => {
-  // if audio is playing (not paused) — stop retrying
-  if (!audio.paused && !audio.muted) {
-    clearInterval(audioRetry);
-    audioReady = true;
-    updateCombinedState();
-    return;
-  }
+window.addEventListener('pointerdown', function startAudioOnce() {
   ensureAudioPlaysOnce();
-}, 2000);
+  window.removeEventListener('pointerdown', startAudioOnce);
+}, { once: true });
 
-/* ======= engines (unchanged) ======= */
 let engines = document.querySelectorAll('.engine');
 let selected = document.querySelector('.engine.selected');
 engines.forEach(e => e.addEventListener('click', () => {
@@ -324,34 +284,29 @@ function doSearch() {
   return false;
 }
 
-/* ======= misc buttons ======= */
 const toggleBtn = document.getElementById('toggleSearch');
 const searchCard = document.getElementById('searchCard');
-if (toggleBtn && searchCard) {
-  toggleBtn.addEventListener('click', () => {
-    if (searchCard.style.display === 'none') {
-      searchCard.style.display = '';
-      toggleBtn.textContent = 'Hide search';
-    } else {
-      searchCard.style.display = 'none';
-      toggleBtn.textContent = 'Show search';
-    }
-  });
-}
-document.getElementById('openBlank')?.addEventListener('click', ()=>window.open('about:blank','_blank'));
-document.getElementById('settings')?.addEventListener('click', ()=>{ alert('To set this file as your homepage: Save the file locally, then in Waterfox go to about:preferences#home → Homepage and new windows → Custom URLs and paste the file path (file:///C:/path/to/portal_homepage.html).'); });
+toggleBtn.addEventListener('click', () => {
+  if (searchCard.style.display === 'none') {
+    searchCard.style.display = '';
+    toggleBtn.textContent = 'Hide search';
+  } else {
+    searchCard.style.display = 'none';
+    toggleBtn.textContent = 'Show search';
+  }
+});
+document.getElementById('openBlank').addEventListener('click', ()=>window.open('about:blank','_blank'));
+document.getElementById('settings').addEventListener('click', ()=>{ alert('To set this file as your homepage: Save the file locally, then in Waterfox go to about:preferences#home → Homepage and new windows → Custom URLs and paste the file path (file:///C:/path/to/portal_homepage.html).'); });
 
 /* ======= drag + custom resize (fixed, clamped, no text selection) ======= */
 (function(){
   const el = document.getElementById('searchCard');
   const dragHandle = document.getElementById('dragHandle');
   const resizeHandle = document.getElementById('resizeHandle');
-  if (!el || !dragHandle || !resizeHandle) return;
 
   let dragging = false, resizing = false;
   let startX=0, startY=0, startLeft=0, startTop=0, startW=0, startH=0;
 
-  // restore saved position and size
   const savedPos = localStorage.getItem('searchCardPos');
   if (savedPos) {
     try {
@@ -381,7 +336,6 @@ document.getElementById('settings')?.addEventListener('click', ()=>{ alert('To s
     return { left, top };
   }
 
-  // pointerdown on header => start dragging
   dragHandle.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
     if (resizing) return;
@@ -389,72 +343,36 @@ document.getElementById('settings')?.addEventListener('click', ()=>{ alert('To s
     el.classList.add('dragging');
     startX = e.clientX; startY = e.clientY;
     const rect = el.getBoundingClientRect();
-    // if transform used (centered), convert to px left/top
     if (el.style.transform && el.style.transform.includes('translate')) {
+      const computed = window.getComputedStyle(el);
       const left = rect.left + window.scrollX;
       const top = rect.top + window.scrollY;
       el.style.left = left + 'px';
       el.style.top = top + 'px';
       el.style.transform = 'translate(0,0)';
     }
-    startLeft = parseFloat(el.style.left || rect.left) || rect.left;
-    startTop = parseFloat(el.style.top || rect.top) || rect.top;
+    startLeft = parseFloat(el.style.left || rect.left + 'px') || rect.left;
+    startTop = parseFloat(el.style.top || rect.top + 'px') || rect.top;
     document.body.style.userSelect = 'none';
     document.body.style.webkitUserSelect = 'none';
+    document.body.style.pointerEvents = 'auto';
     e.preventDefault();
   });
 
-  // pointerdown on resize handle => start resizing
-  resizeHandle.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0) return;
-    e.stopPropagation();
-    resizing = true;
-    dragging = false;
-    el.classList.remove('dragging');
-    startX = e.clientX; startY = e.clientY;
-    startW = el.offsetWidth; startH = el.offsetHeight;
-    const rect = el.getBoundingClientRect();
-    if (el.style.transform && el.style.transform.includes('translate')) {
-      el.style.left = rect.left + 'px';
-      el.style.top = rect.top + 'px';
-      el.style.transform = 'translate(0,0)';
-    }
-    startLeft = parseFloat(el.style.left || rect.left) || rect.left;
-    startTop = parseFloat(el.style.top || rect.top) || rect.top;
-    el.style.transition = 'none';
-    document.body.style.userSelect = 'none';
-    e.preventDefault();
-  });
-
-  // global pointer move handles both drag & resize
   window.addEventListener('pointermove', (e) => {
-    if (dragging) {
-      e.preventDefault();
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-      let newLeft = Math.round(startLeft + dx);
-      let newTop = Math.round(startTop + dy);
-      const width = el.offsetWidth;
-      const height = el.offsetHeight;
-      const clamped = clampPosition(newLeft, newTop, width, height);
-      el.style.left = clamped.left + 'px';
-      el.style.top = clamped.top + 'px';
-    } else if (resizing) {
-      e.preventDefault();
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-      let newW = Math.max(220, Math.round(startW + dx));
-      let newH = Math.max(90, Math.round(startH + dy));
-      const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-      const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-      newW = Math.min(newW, vw - startLeft - 8);
-      newH = Math.min(newH, vh - startTop - 8);
-      el.style.width = newW + 'px';
-      el.style.height = newH + 'px';
-    }
+    if (!dragging) return;
+    e.preventDefault();
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    let newLeft = Math.round(startLeft + dx);
+    let newTop = Math.round(startTop + dy);
+    const width = el.offsetWidth;
+    const height = el.offsetHeight;
+    const clamped = clampPosition(newLeft, newTop, width, height);
+    el.style.left = clamped.left + 'px';
+    el.style.top = clamped.top + 'px';
   });
 
-  // pointerup finalize either drag or resize
   window.addEventListener('pointerup', (e) => {
     if (dragging) {
       dragging = false;
@@ -477,26 +395,59 @@ document.getElementById('settings')?.addEventListener('click', ()=>{ alert('To s
     }
   });
 
-  // double-click header recenters
+  /* ===== custom resize via handle ===== */
+  resizeHandle.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    resizing = true;
+    dragging = false;
+    el.classList.remove('dragging');
+    startX = e.clientX; startY = e.clientY;
+    startW = el.offsetWidth; startH = el.offsetHeight;
+    const rect = el.getBoundingClientRect();
+    if (el.style.transform && el.style.transform.includes('translate')) {
+      el.style.left = rect.left + 'px';
+      el.style.top = rect.top + 'px';
+      el.style.transform = 'translate(0,0)';
+    }
+    startLeft = parseFloat(el.style.left || rect.left) || rect.left;
+    startTop = parseFloat(el.style.top || rect.top) || rect.top;
+    el.style.transition = 'none';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+
+  window.addEventListener('pointermove', (e) => {
+    if (!resizing) return;
+    e.preventDefault();
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    let newW = Math.max(220, Math.round(startW + dx));
+    let newH = Math.max(90, Math.round(startH + dy));
+    const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+    const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+    newW = Math.min(newW, vw - startLeft - 8);
+    newH = Math.min(newH, vh - startTop - 8);
+    el.style.width = newW + 'px';
+    el.style.height = newH + 'px';
+  });
+
   dragHandle.addEventListener('dblclick', () => {
     el.style.left = (window.innerWidth/2 - el.offsetWidth/2) + 'px';
     el.style.top = (window.innerHeight/2 - el.offsetHeight/2) + 'px';
     localStorage.setItem('searchCardPos', JSON.stringify({ left: el.style.left, top: el.style.top }));
   });
 
-})(); // end drag/resize
+})();
 
-/* ======= resize save observer as fallback ======= */
 (function(){
   const el = document.getElementById('searchCard');
-  if (!el) return;
   const ro = new ResizeObserver(() => {
     localStorage.setItem('searchCardSize', JSON.stringify({ width: el.offsetWidth + 'px', height: el.offsetHeight + 'px' }));
   });
   ro.observe(el);
 })();
 
-/* ======= audio UI script (volume/mute + panel toggle) ======= */
 (function() {
   const audioControl = document.getElementById('audioControl');
   const audioToggle = document.getElementById('audioToggle');
@@ -504,9 +455,6 @@ document.getElementById('settings')?.addEventListener('click', ()=>{ alert('To s
   const volPct = document.getElementById('volPct');
   const muteBtn = document.getElementById('muteBtn');
 
-  if (!audioControl || !audioToggle || !volumeSlider || !volPct || !muteBtn) return;
-
-  // load saved volume (value stored 0..1)
   const savedVol = localStorage.getItem('portalVolume');
   if (savedVol !== null) audio.volume = parseFloat(savedVol);
   else audio.volume = 0.5;
@@ -516,8 +464,6 @@ document.getElementById('settings')?.addEventListener('click', ()=>{ alert('To s
     slider.style.background = `linear-gradient(90deg, var(--accent) ${pct}%, var(--dark-grey) ${pct}%)`;
     volPct.textContent = `${Math.round(pct)}%`;
   }
-
-  // initialize slider value from audio volume
   volumeSlider.value = Math.round(audio.volume * 100);
   setSliderBackground(volumeSlider, volumeSlider.value);
   updateMuteIcon();
@@ -526,7 +472,6 @@ document.getElementById('settings')?.addEventListener('click', ()=>{ alert('To s
     e.stopPropagation();
     audioControl.classList.toggle('open');
     audioToggle.setAttribute('aria-expanded', audioControl.classList.contains('open'));
-    // if opening and audio muted, try to play
     if (audio.muted) {
       audio.muted = false;
       audio.volume = volumeSlider.value / 100;
@@ -565,27 +510,6 @@ document.getElementById('settings')?.addEventListener('click', ()=>{ alert('To s
 
   setSliderBackground(volumeSlider, volumeSlider.value);
 })();
-
-/* ======= Mobile/live tip text ======= */
-(function(){
-  function updateTipText() {
-    const tip = document.getElementById('tipText');
-    if (!tip) return;
-    const isMobileUA = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
-    const isSmallScreen = window.innerWidth <= 768;
-    if (isMobileUA || isSmallScreen) {
-      tip.textContent = "Tip: get a pc vro ts don't work on mobile 😭🙏🥀";
-    } else {
-      tip.textContent = "Tip: Why are you here";
-    }
-  }
-  // run now and on resize (live)
-  updateTipText();
-  window.addEventListener('resize', updateTipText);
-  // also run after DOMContentLoaded in case of timing
-  document.addEventListener('DOMContentLoaded', updateTipText);
-})();
-
 </script>
 </body>
 </html>
