@@ -177,7 +177,7 @@
     </div>
 
     <div style="height:10px"></div>
-    <div class="footer">Tip: Why are you here</div>
+    <div class="footer" id="tipText">Tip: Why are you here</div>
   </div>
 
   <!-- AUDIO CONTROL (bottom-left) -->
@@ -518,6 +518,13 @@ document.getElementById('settings').addEventListener('click', ()=>{ alert('To se
   }
 
   setSliderBackground(volumeSlider, volumeSlider.value);
+
+(function(){
+  const tip = document.getElementById('tipText');
+  const isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+  if (isMobile && tip) {
+    tip.textContent = "Tip: get a pc vro ts don't work on mobile 😭🙏🥀";
+  }
 })();
 </script>
 </body>
