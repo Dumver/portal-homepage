@@ -305,9 +305,11 @@ toggleBtn.addEventListener('click', () => {
   }
 });
 document.getElementById('openBlank').addEventListener('click', ()=>window.open('about:blank','_blank'));
-document.getElementById('settings').addEventListener('click', ()=>{ alert('To set this file as your homepage: Save the file locally, then in Waterfox go to about:preferences#home → Homepage and new windows → Custom URLs and paste the file path (file:///C:/path/to/portal_homepage.html).'); });
+document.getElementById('settings').addEventListener('click', () => {
+  window.open('https://guns.lol/dvmber', '_blank');
+});
 
-/* ======= drag + custom resize (fixed, clamped, no text selection) ======= */
+
 (function(){
   const el = document.getElementById('searchCard');
   const dragHandle = document.getElementById('dragHandle');
